@@ -48,6 +48,8 @@ class Entries:
             self.add_entry(element)
 
     def del_entry(self, entry):
+        if entry not in self.entries_list:
+            return
         self.entries_list.remove(entry)
         entry.destroy()
 
@@ -130,15 +132,20 @@ class Commands:
                 json.dump(tmp_dict, file_out)
             return self
 
-        def reset_state(self):
-            self.list_of_function = []
+        def reset_state(self, entries):
+            for i in range(len(entries.entries_list)):
+                entries.del_entry(entries.entries_list[0])
 
-        def open_state(self):
+
+        def open_state(self, entries):
             file_in = askopenfile(filetypes=[("json files", "*.json")])
-            if file_in is not None:
+            if file_in:
                 file_data = json.load(file_in)
+                self.reset_state(entries)
                 self.list_of_function = file_data['list_of_function']
-            return self.list_of_function
+                return self.list_of_function
+            else:
+                return None
 
     def __init__(self):
         self.command_dict = {}
@@ -169,7 +176,6 @@ class Commands:
         def is_not_blank(s):
             return bool(s and not s.isspace())
 
-        self._state.reset_state()
         list_of_function = []
         for entry in self.parent_window.entries.entries_list:
             get_func_str = entry.get()
@@ -209,10 +215,10 @@ class Commands:
         return self
 
     def open(self):
-        file_in_func = self._state.open_state()
-        if file_in_func is not None:
+        file_in_func = self._state.open_state(self.parent_window.entries)
+        if file_in_func:
             self.parent_window.entries.add_entry_list(file_in_func)
-            self.plot()
+        self.plot()
         return self
 
 
